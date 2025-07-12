@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Camera, MapPin, QrCode, Clock, User } from "lucide-react";
+import { Shield, Camera, MapPin, QrCode, Clock, User, Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { QRScanner } from "./QRScanner";
 
 export default function SecureRounds() {
   const { toast } = useToast();
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const [formData, setFormData] = useState({
     state: '',
     siteCode: '',
@@ -26,6 +28,19 @@ export default function SecureRounds() {
       ...prev,
       [name]: files ? files[0] : value
     }));
+  };
+
+  const handleQRScan = (result: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      qrScan: result
+    }));
+    setShowQRScanner(false);
+    toast({
+      title: "QR Code Scanned",
+      description: `Scanned: ${result}`,
+      variant: "default",
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +79,16 @@ export default function SecureRounds() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-xl mx-auto space-y-6">
+        {/* QR Scanner Modal */}
+        {showQRScanner && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <QRScanner 
+              onScan={handleQRScan}
+              onClose={() => setShowQRScanner(false)}
+            />
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
@@ -196,14 +221,27 @@ export default function SecureRounds() {
                       <QrCode className="h-4 w-4" />
                       QR Code Scan
                     </Label>
-                    <Input
-                      id="qrScan"
-                      name="qrScan"
-                      value={formData.qrScan}
-                      placeholder="Scan or enter QR code"
-                      onChange={handleChange}
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="qrScan"
+                        name="qrScan"
+                        value={formData.qrScan}
+                        placeholder="Scanned QR code will appear here"
+                        onChange={handleChange}
+                        readOnly
+                        className="flex-1"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => setShowQRScanner(true)}
+                        variant="outline"
+                        size="default"
+                        className="px-3"
+                      >
+                        <Scan className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
