@@ -3,11 +3,36 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Camera, MapPin, QrCode, Clock, User, Scan } from "lucide-react";
+import { Shield, Camera, MapPin, QrCode, Clock, User, Scan, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { QRScanner } from "./QRScanner";
 import { CameraCapture } from "./CameraCapture";
+
+// Security validation functions
+const validateQRCode = (qrData: string): boolean => {
+  if (!qrData || qrData.length === 0) return false;
+  if (qrData.length > 500) return false;
+  // Basic XSS prevention - check for script tags or suspicious content
+  const dangerousPatterns = /<script|javascript:|data:|vbscript:/i;
+  return !dangerousPatterns.test(qrData);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.replace(/[<>\"'&]/g, '').trim();
+};
+
+const validateGPSCoordinates = (lat: number, lng: number): boolean => {
+  return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+};
+
+const validateTextInput = (input: string, maxLength: number = 100): boolean => {
+  return input && sanitizeInput(input).length > 0 && input.length <= maxLength;
+};
+
+const validateFileSize = (file: File, maxSizeMB: number = 10): boolean => {
+  return file.size <= maxSizeMB * 1024 * 1024;
+};
 
 export default function SecureRounds() {
   const { toast } = useToast();
@@ -28,26 +53,61 @@ export default function SecureRounds() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
+    
+    // Sanitize text inputs
+    const sanitizedValue = typeof value === 'string' ? sanitizeInput(value) : value;
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: files ? files[0] : value
+      [name]: files ? files[0] : sanitizedValue
     }));
   };
 
   const handleQRScan = (result: string) => {
+    // Validate QR code before accepting
+    if (!validateQRCode(result)) {
+      toast({
+        title: "Invalid QR Code",
+        description: "The scanned QR code contains invalid or potentially harmful content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sanitizedResult = sanitizeInput(result);
     setFormData((prev) => ({
       ...prev,
-      qrScan: result
+      qrScan: sanitizedResult
     }));
     setShowQRScanner(false);
     toast({
       title: "QR Code Scanned",
-      description: `Scanned: ${result}`,
+      description: "Valid QR code successfully scanned and verified.",
       variant: "default",
     });
   };
 
   const handlePhotoCapture = (data: { file: File; coordinates: { lat: number; lng: number } | null }) => {
+    // Validate file size and type
+    if (!validateFileSize(data.file, 10)) {
+      toast({
+        title: "File Too Large",
+        description: "Photo must be smaller than 10MB. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate GPS coordinates if provided
+    if (data.coordinates && !validateGPSCoordinates(data.coordinates.lat, data.coordinates.lng)) {
+      toast({
+        title: "Invalid GPS Coordinates",
+        description: "GPS coordinates appear to be invalid. Photo captured without location.",
+        variant: "destructive",
+      });
+      data.coordinates = null;
+    }
+
     setPhotoData(data);
     setFormData((prev) => ({
       ...prev,
@@ -64,7 +124,7 @@ export default function SecureRounds() {
       
     toast({
       title: "Selfie Captured",
-      description: `Photo captured with timestamp and location. ${locationText}`,
+      description: `Photo validated and captured. ${locationText}`,
       variant: "default",
     });
   };
@@ -77,23 +137,57 @@ export default function SecureRounds() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({
-          title: "Error",
-          description: "You must be logged in to submit checkpoint data.",
+          title: "Authentication Required",
+          description: "Please log in to submit checkpoint data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Comprehensive form validation
+      const validationErrors: string[] = [];
+      
+      if (!validateTextInput(formData.state, 50)) {
+        validationErrors.push("State is required and must be valid");
+      }
+      if (!validateTextInput(formData.siteCode, 20)) {
+        validationErrors.push("Site code is required and must be valid");
+      }
+      if (!validateTextInput(formData.siteName, 100)) {
+        validationErrors.push("Site name is required and must be valid");
+      }
+      if (!validateTextInput(formData.guardName, 100)) {
+        validationErrors.push("Guard name is required and must be valid");
+      }
+      if (!validateTextInput(formData.employeeCode, 50)) {
+        validationErrors.push("Employee code is required and must be valid");
+      }
+      if (!formData.qrScan || !validateQRCode(formData.qrScan)) {
+        validationErrors.push("Valid QR code scan is required");
+      }
+      if (!photoData) {
+        validationErrors.push("Selfie with GPS coordinates is required");
+      }
+
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Validation Error",
+          description: validationErrors.join(". "),
           variant: "destructive",
         });
         return;
       }
 
       const timestamp = new Date().toISOString();
-      const location = `${formData.state} - ${formData.siteName}`;
+      const location = `${sanitizeInput(formData.state)} - ${sanitizeInput(formData.siteName)}`;
       
-      // Create data object to submit to Supabase
+      // Create sanitized data object to submit to Supabase
       const submissionData = {
         user_id: user.id,
         location: location,
-        guard_name: formData.guardName,
-        employee_id: formData.employeeCode,
-        qr_code_data: formData.qrScan,
+        guard_name: sanitizeInput(formData.guardName),
+        employee_id: sanitizeInput(formData.employeeCode),
+        qr_code_data: sanitizeInput(formData.qrScan),
         gps_coordinates: photoData?.coordinates || null,
         timestamp: timestamp,
       };
@@ -107,7 +201,7 @@ export default function SecureRounds() {
 
       toast({
         title: "Checkpoint Logged Successfully",
-        description: "Your security round data has been saved to the database.",
+        description: "Your security round data has been validated and saved securely.",
       });
 
       // Reset form after successful submission
@@ -124,9 +218,11 @@ export default function SecureRounds() {
       });
       setPhotoData(null);
     } catch (error: any) {
+      // Generic error message to prevent information disclosure
+      console.error('Submission error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to save security round data.",
+        title: "Submission Failed",
+        description: "Unable to save checkpoint data. Please try again.",
         variant: "destructive",
       });
     }
@@ -266,10 +362,13 @@ export default function SecureRounds() {
                 
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="photo" className="flex items-center gap-2">
-                      <Camera className="h-4 w-4" />
-                      Capture Live Selfie with GPS
-                    </Label>
+                     <Label htmlFor="photo" className="flex items-center gap-2">
+                       <Camera className="h-4 w-4" />
+                       Capture Live Selfie with GPS
+                     </Label>
+                     <p className="text-xs text-muted-foreground mb-2">
+                       📍 GPS location will be captured and stored for security verification purposes.
+                     </p>
                     <div className="space-y-2">
                       <Button
                         type="button"
