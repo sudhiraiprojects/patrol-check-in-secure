@@ -1,7 +1,7 @@
-import SecureRounds from "@/components/SecureRounds";
+import AuthWrapper from "@/components/AuthWrapper";
 
 const Index = () => {
-  return <SecureRounds />;
+  return <AuthWrapper />;
 };
 
 export default Index;

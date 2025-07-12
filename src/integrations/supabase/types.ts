@@ -14,7 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          employee_id: string | null
+          guard_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id?: string | null
+          guard_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string | null
+          guard_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_rounds: {
+        Row: {
+          created_at: string
+          employee_id: string
+          gps_coordinates: Json | null
+          guard_name: string
+          id: string
+          location: string
+          photo_url: string | null
+          qr_code_data: string | null
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          gps_coordinates?: Json | null
+          guard_name: string
+          id?: string
+          location: string
+          photo_url?: string | null
+          qr_code_data?: string | null
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          gps_coordinates?: Json | null
+          guard_name?: string
+          id?: string
+          location?: string
+          photo_url?: string | null
+          qr_code_data?: string | null
+          timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

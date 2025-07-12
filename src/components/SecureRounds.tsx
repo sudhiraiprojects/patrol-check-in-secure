@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Camera, MapPin, QrCode, Clock, User, Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { QRScanner } from "./QRScanner";
 import { CameraCapture } from "./CameraCapture";
 
@@ -70,42 +71,65 @@ export default function SecureRounds() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const timestamp = new Date().toISOString();
-    const gpsLocation = formData.gpsLocation || 'GPS unavailable';
-
-    const dataToSubmit = {
-      ...formData,
-      timestamp,
-      gpsLocation,
-      photoMetadata: photoData ? {
-        fileName: photoData.file.name,
-        fileSize: photoData.file.size,
-        coordinates: photoData.coordinates,
-        captureTime: timestamp
-      } : null
-    };
-
-    toast({
-      title: "Checkpoint Logged",
-      description: "Your security checkpoint has been recorded successfully.",
-      variant: "default",
-    });
-
-    console.log('Security checkpoint data:', dataToSubmit);
     
-    // Reset form after successful submission
-    setFormData({
-      state: '',
-      siteCode: '',
-      siteName: '',
-      guardName: '',
-      employeeCode: '',
-      timestamp: '',
-      photo: null,
-      gpsLocation: '',
-      qrScan: ''
-    });
-    setPhotoData(null);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to submit checkpoint data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      const location = `${formData.state} - ${formData.siteName}`;
+      
+      // Create data object to submit to Supabase
+      const submissionData = {
+        user_id: user.id,
+        location: location,
+        guard_name: formData.guardName,
+        employee_id: formData.employeeCode,
+        qr_code_data: formData.qrScan,
+        gps_coordinates: photoData?.coordinates || null,
+        timestamp: timestamp,
+      };
+
+      // Insert data into Supabase
+      const { error } = await supabase
+        .from('security_rounds')
+        .insert([submissionData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Checkpoint Logged Successfully",
+        description: "Your security round data has been saved to the database.",
+      });
+
+      // Reset form after successful submission
+      setFormData({
+        state: '',
+        siteCode: '',
+        siteName: '',
+        guardName: '',
+        employeeCode: '',
+        timestamp: '',
+        photo: null,
+        gpsLocation: '',
+        qrScan: ''
+      });
+      setPhotoData(null);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save security round data.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
