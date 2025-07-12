@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Shield, Camera, MapPin, QrCode, Clock, User, Scan } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { QRScanner } from "./QRScanner";
+import { CameraCapture } from "./CameraCapture";
 
 export default function SecureRounds() {
   const { toast } = useToast();
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [photoData, setPhotoData] = useState<{ file: File; coordinates: { lat: number; lng: number } | null } | null>(null);
   const [formData, setFormData] = useState({
     state: '',
     siteCode: '',
@@ -17,7 +20,7 @@ export default function SecureRounds() {
     guardName: '',
     employeeCode: '',
     timestamp: '',
-    photo: null,
+    photo: null as File | null,
     gpsLocation: '',
     qrScan: ''
   });
@@ -43,15 +46,43 @@ export default function SecureRounds() {
     });
   };
 
+  const handlePhotoCapture = (data: { file: File; coordinates: { lat: number; lng: number } | null }) => {
+    setPhotoData(data);
+    setFormData((prev) => ({
+      ...prev,
+      photo: data.file,
+      gpsLocation: data.coordinates 
+        ? `${data.coordinates.lat}, ${data.coordinates.lng}` 
+        : 'GPS unavailable'
+    }));
+    setShowCamera(false);
+    
+    const locationText = data.coordinates 
+      ? `GPS: ${data.coordinates.lat.toFixed(4)}, ${data.coordinates.lng.toFixed(4)}`
+      : 'GPS coordinates unavailable';
+      
+    toast({
+      title: "Selfie Captured",
+      description: `Photo captured with timestamp and location. ${locationText}`,
+      variant: "default",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const timestamp = new Date().toISOString();
-    const gpsLocation = 'Mock GPS: 40.7128, -74.0060'; // Replace with actual device GPS capture
+    const gpsLocation = formData.gpsLocation || 'GPS unavailable';
 
     const dataToSubmit = {
       ...formData,
       timestamp,
-      gpsLocation
+      gpsLocation,
+      photoMetadata: photoData ? {
+        fileName: photoData.file.name,
+        fileSize: photoData.file.size,
+        coordinates: photoData.coordinates,
+        captureTime: timestamp
+      } : null
     };
 
     toast({
@@ -74,11 +105,22 @@ export default function SecureRounds() {
       gpsLocation: '',
       qrScan: ''
     });
+    setPhotoData(null);
   };
 
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-xl mx-auto space-y-6">
+        {/* Camera Capture Modal */}
+        {showCamera && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <CameraCapture 
+              onCapture={handlePhotoCapture}
+              onClose={() => setShowCamera(false)}
+            />
+          </div>
+        )}
+
         {/* QR Scanner Modal */}
         {showQRScanner && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -202,18 +244,28 @@ export default function SecureRounds() {
                   <div>
                     <Label htmlFor="photo" className="flex items-center gap-2">
                       <Camera className="h-4 w-4" />
-                      Upload Selfie
+                      Capture Live Selfie with GPS
                     </Label>
-                    <Input
-                      id="photo"
-                      type="file"
-                      name="photo"
-                      accept="image/*"
-                      capture="user"
-                      onChange={handleChange}
-                      className="cursor-pointer"
-                      required
-                    />
+                    <div className="space-y-2">
+                      <Button
+                        type="button"
+                        onClick={() => setShowCamera(true)}
+                        variant="outline"
+                        className="w-full h-12"
+                      >
+                        <Camera className="h-5 w-5 mr-2" />
+                        {photoData ? 'Retake Selfie' : 'Take Selfie'}
+                      </Button>
+                      {photoData && (
+                        <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
+                          <p>✓ Photo captured: {photoData.file.name}</p>
+                          <p>📸 Size: {(photoData.file.size / 1024).toFixed(1)}KB</p>
+                          {photoData.coordinates && (
+                            <p>📍 GPS: {photoData.coordinates.lat.toFixed(4)}, {photoData.coordinates.lng.toFixed(4)}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -251,6 +303,7 @@ export default function SecureRounds() {
                 type="submit" 
                 className="w-full h-12 text-lg font-semibold"
                 size="lg"
+                disabled={!photoData || !formData.qrScan}
               >
                 <Clock className="h-5 w-5 mr-2" />
                 Submit Checkpoint
@@ -262,13 +315,16 @@ export default function SecureRounds() {
         {/* Status Footer */}
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-sm text-muted-foreground space-y-1">
               <p className="flex items-center justify-center gap-2">
                 <MapPin className="h-4 w-4" />
-                GPS: Ready | 
+                GPS: {formData.gpsLocation || 'Waiting for location...'} | 
                 <Clock className="h-4 w-4 ml-2" />
                 {new Date().toLocaleTimeString()}
               </p>
+              {photoData && (
+                <p className="text-success">✓ Live selfie captured with GPS coordinates</p>
+              )}
             </div>
           </CardContent>
         </Card>
