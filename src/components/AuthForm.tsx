@@ -120,14 +120,21 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/80 to-muted/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Security Rounds</CardTitle>
-          <CardDescription>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-accent/10 to-success/5 p-4">
+      <Card className="w-full max-w-md bg-gradient-card shadow-card border-primary/20">
+        <CardHeader className="text-center bg-gradient-to-r from-primary/10 to-accent/5 border-b border-primary/10">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-gradient-primary rounded-full shadow-button">
+              <div className="text-2xl">🛡️</div>
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            SecureRounds
+          </CardTitle>
+          <CardDescription className="text-base text-primary/80 font-medium">
             {step === "email" 
-              ? "Enter your email to receive a verification code"
-              : "Enter the 6-digit code sent to your email"
+              ? "🔐 Enter your email to receive a verification code"
+              : "📱 Enter the 6-digit code sent to your email"
             }
           </CardDescription>
         </CardHeader>
@@ -144,8 +151,12 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                   className="w-full"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Sending..." : "Send Verification Code"}
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-lg font-medium bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white border-0 shadow-button" 
+                disabled={loading}
+              >
+                {loading ? "📤 Sending..." : "📧 Send Verification Code"}
               </Button>
             </form>
           ) : (
@@ -166,8 +177,12 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Verifying..." : "Verify Code"}
+              <Button 
+                type="submit" 
+                className="w-full h-12 text-lg font-medium bg-gradient-to-r from-success to-success/80 hover:from-success/90 hover:to-success/70 text-white border-0 shadow-button" 
+                disabled={loading}
+              >
+                {loading ? "🔍 Verifying..." : "✅ Verify Code"}
               </Button>
               <div className="text-center">
                 <Button

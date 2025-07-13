@@ -220,9 +220,10 @@ export default function SecureRounds() {
       };
 
       // Insert data into Supabase
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('security_rounds')
-        .insert([submissionData]);
+        .insert([submissionData])
+        .select();
 
       if (error) throw error;
 
@@ -262,7 +263,7 @@ export default function SecureRounds() {
   const { scannedCount } = getQRProgress();
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/5 p-4">
       <div className="max-w-xl mx-auto space-y-6">
         {/* Camera Capture Modal */}
         {showCamera && (
@@ -285,31 +286,44 @@ export default function SecureRounds() {
         )}
 
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="p-3 bg-gradient-primary rounded-full shadow-button">
-              <Shield className="h-8 w-8 text-white" />
+            <div className="p-4 bg-gradient-primary rounded-full shadow-card animate-pulse">
+              <Shield className="h-10 w-10 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">SecureRounds</h1>
-          <p className="text-muted-foreground">Security Guard Patrol Monitoring</p>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              SecureRounds
+            </h1>
+            <p className="text-lg text-primary/80 font-medium">🛡️ Advanced Security Patrol System</p>
+            <div className="flex justify-center gap-2 text-sm text-muted-foreground">
+              <span className="bg-primary/10 px-2 py-1 rounded-full">🔒 Secure</span>
+              <span className="bg-accent/10 px-2 py-1 rounded-full">📱 Real-time</span>
+              <span className="bg-success/10 px-2 py-1 rounded-full">✅ Verified</span>
+            </div>
+          </div>
         </div>
 
         {/* Main Form Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              Checkpoint Check-in
+        <Card className="bg-gradient-card shadow-card border-primary/20">
+          <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-primary/10">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <MapPin className="h-5 w-5 text-primary" />
+              </div>
+              🎯 Checkpoint Check-in
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Location Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Location Details
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-3 p-3 bg-gradient-to-r from-primary/10 to-transparent rounded-lg border border-primary/20">
+                  <div className="p-1.5 bg-primary/20 rounded-md">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  📍 Location Details
                 </h3>
                 
                 <div className="grid gap-4">
@@ -354,9 +368,11 @@ export default function SecureRounds() {
 
               {/* Guard Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Guard Information
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-3 p-3 bg-gradient-to-r from-accent/10 to-transparent rounded-lg border border-accent/20">
+                  <div className="p-1.5 bg-accent/20 rounded-md">
+                    <User className="h-4 w-4 text-accent" />
+                  </div>
+                  👤 Guard Information
                 </h3>
                 
                 <div className="grid gap-4">
@@ -388,9 +404,11 @@ export default function SecureRounds() {
 
               {/* Verification */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Camera className="h-4 w-4" />
-                  Verification
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-3 p-3 bg-gradient-to-r from-success/10 to-transparent rounded-lg border border-success/20">
+                  <div className="p-1.5 bg-success/20 rounded-md">
+                    <Camera className="h-4 w-4 text-success" />
+                  </div>
+                  📸 Security Verification
                 </h3>
                 
                 <div className="space-y-4">
@@ -403,36 +421,47 @@ export default function SecureRounds() {
                        📍 GPS location will be captured and stored for security verification purposes.
                      </p>
                     <div className="space-y-2">
-                      <Button
+                     <Button
                         type="button"
                         onClick={() => setShowCamera(true)}
-                        variant="outline"
-                        className="w-full h-12"
+                        variant={photoData ? "secondary" : "default"}
+                        className="w-full h-14 text-lg font-medium bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white border-0 shadow-button"
                       >
-                        <Camera className="h-5 w-5 mr-2" />
-                        {photoData ? 'Retake Selfie' : 'Take Selfie'}
+                        <Camera className="h-6 w-6 mr-3" />
+                        {photoData ? '🔄 Retake Selfie' : '📸 Take Selfie + GPS'}
                       </Button>
-                      {photoData && (
-                        <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                          <p>✓ Photo captured: {photoData.file.name}</p>
-                          <p>📸 Size: {(photoData.file.size / 1024).toFixed(1)}KB</p>
+                       {photoData && (
+                        <div className="text-sm p-4 bg-gradient-to-r from-success/10 to-success/5 border border-success/20 rounded-lg">
+                          <div className="flex items-center gap-2 text-success font-medium mb-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Photo Successfully Captured
+                          </div>
+                          <p className="text-foreground">📸 File: {photoData.file.name}</p>
+                          <p className="text-foreground">💾 Size: {(photoData.file.size / 1024).toFixed(1)}KB</p>
                           {photoData.coordinates && (
-                            <p>📍 GPS: {photoData.coordinates.lat.toFixed(4)}, {photoData.coordinates.lng.toFixed(4)}</p>
+                            <p className="text-foreground">📍 GPS: {photoData.coordinates.lat.toFixed(4)}, {photoData.coordinates.lng.toFixed(4)}</p>
                           )}
                         </div>
-                      )}
+                       )}
                     </div>
                   </div>
 
                   {/* Four Corner QR Code Scanning */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label className="flex items-center gap-2">
-                        <QrCode className="h-4 w-4" />
-                        Scan All 4 Corner QR Codes
-                      </Label>
-                      <Badge variant={allQRCodesScanned() ? "default" : "secondary"}>
-                        {scannedCount}/4 Complete
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-warning/10 rounded-lg">
+                          <QrCode className="h-5 w-5 text-warning" />
+                        </div>
+                        <Label className="text-lg font-medium">
+                          🎯 Scan All 4 Corner QR Codes
+                        </Label>
+                      </div>
+                      <Badge 
+                        variant={allQRCodesScanned() ? "default" : "secondary"}
+                        className={allQRCodesScanned() ? "bg-success text-white" : "bg-warning text-black"}
+                      >
+                        {scannedCount}/4 {allQRCodesScanned() ? "✅ Complete" : "⏳ Pending"}
                       </Badge>
                     </div>
                     
@@ -444,20 +473,22 @@ export default function SecureRounds() {
                         const isCurrent = currentCorner === corner;
                         
                         return (
-                          <div
+                           <div
                             key={corner}
-                            className={`p-2 rounded-lg border flex items-center gap-2 text-sm ${
-                              isCurrent ? 'border-primary bg-primary/10' : 
-                              isScanned ? 'border-green-500 bg-green-50' : 'border-muted bg-muted/50'
+                            className={`p-3 rounded-xl border-2 flex items-center gap-3 text-sm font-medium transition-all duration-200 ${
+                              isCurrent ? 'border-primary bg-gradient-to-r from-primary/20 to-primary/10 shadow-lg scale-105' : 
+                              isScanned ? 'border-success bg-gradient-to-r from-success/20 to-success/10' : 'border-muted bg-gradient-to-r from-muted/30 to-muted/10'
                             }`}
                           >
                             {isScanned ? (
-                              <CheckCircle className="h-4 w-4 text-green-500" />
+                              <CheckCircle className="h-5 w-5 text-success" />
+                            ) : isCurrent ? (
+                              <Scan className="h-5 w-5 text-primary animate-pulse" />
                             ) : (
-                              <Circle className="h-4 w-4 text-muted-foreground" />
+                              <Circle className="h-5 w-5 text-muted-foreground" />
                             )}
-                            <span className={isCurrent ? 'font-medium text-primary' : ''}>
-                              Corner {corner}
+                            <span className={`${isCurrent ? 'font-bold text-primary' : isScanned ? 'text-success' : 'text-muted-foreground'}`}>
+                              {isScanned ? '✅' : isCurrent ? '🎯' : '⏳'} Corner {corner}
                             </span>
                           </div>
                         );
@@ -484,15 +515,15 @@ export default function SecureRounds() {
                             ))}
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          onClick={() => setShowQRScanner(true)}
-                          variant="default"
-                          className="mt-6"
-                        >
-                          <Scan className="h-4 w-4 mr-2" />
-                          Scan Corner {currentCorner}
-                        </Button>
+                     <Button
+                        type="button"
+                        onClick={() => setShowQRScanner(true)}
+                        variant="default"
+                        className="mt-6 h-14 text-lg font-medium bg-gradient-to-r from-warning to-warning/80 hover:from-warning/90 hover:to-warning/70 text-black border-0 shadow-button"
+                      >
+                        <Scan className="h-6 w-6 mr-3 animate-pulse" />
+                        🔍 Scan Corner {currentCorner}
+                      </Button>
                       </div>
                       
                       <div className="text-xs text-muted-foreground">
@@ -509,12 +540,11 @@ export default function SecureRounds() {
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full h-12 text-lg font-semibold"
-                size="lg"
-                disabled={!photoData || !allQRCodesScanned()}
+                className="w-full h-16 text-xl font-bold bg-gradient-to-r from-success via-success to-success/90 hover:from-success/90 hover:via-success/90 hover:to-success/80 text-white border-0 shadow-button transition-all duration-300 transform hover:scale-105"
+                disabled={!allQRCodesScanned() || !photoData}
               >
-                <Clock className="h-5 w-5 mr-2" />
-                Submit Checkpoint ({scannedCount}/4 QR + Photo)
+                <Clock className="h-6 w-6 mr-3" />
+                🚀 Submit Security Round
               </Button>
             </form>
           </CardContent>
