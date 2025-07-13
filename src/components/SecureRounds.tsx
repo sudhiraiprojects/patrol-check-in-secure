@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Camera, MapPin, QrCode, Clock, User, Scan, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Camera, MapPin, QrCode, Clock, User, Scan, CheckCircle, Circle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { QRScanner } from "./QRScanner";
@@ -48,8 +49,12 @@ export default function SecureRounds() {
     timestamp: '',
     photo: null as File | null,
     gpsLocation: '',
-    qrScan: ''
+    qrCodeCorner1: '',
+    qrCodeCorner2: '',
+    qrCodeCorner3: '',
+    qrCodeCorner4: ''
   });
+  const [currentCorner, setCurrentCorner] = useState<1 | 2 | 3 | 4>(1);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
@@ -75,16 +80,25 @@ export default function SecureRounds() {
     }
 
     const sanitizedResult = sanitizeInput(result);
+    const cornerKey = `qrCodeCorner${currentCorner}` as keyof typeof formData;
+    
     setFormData((prev) => ({
       ...prev,
-      qrScan: sanitizedResult
+      [cornerKey]: sanitizedResult
     }));
+    
     setShowQRScanner(false);
+    
     toast({
-      title: "QR Code Scanned",
+      title: `Corner ${currentCorner} QR Code Scanned`,
       description: "Valid QR code successfully scanned and verified.",
       variant: "default",
     });
+
+    // Auto advance to next corner if not the last one
+    if (currentCorner < 4) {
+      setCurrentCorner((prev) => (prev + 1) as 1 | 2 | 3 | 4);
+    }
   };
 
   const handlePhotoCapture = (data: { file: File; coordinates: { lat: number; lng: number } | null }) => {
@@ -129,6 +143,16 @@ export default function SecureRounds() {
     });
   };
 
+  const getQRProgress = () => {
+    const corners = [formData.qrCodeCorner1, formData.qrCodeCorner2, formData.qrCodeCorner3, formData.qrCodeCorner4];
+    const scannedCount = corners.filter(corner => corner).length;
+    return { scannedCount, total: 4 };
+  };
+
+  const allQRCodesScanned = () => {
+    return formData.qrCodeCorner1 && formData.qrCodeCorner2 && formData.qrCodeCorner3 && formData.qrCodeCorner4;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -162,8 +186,8 @@ export default function SecureRounds() {
       if (!validateTextInput(formData.employeeCode, 50)) {
         validationErrors.push("Employee code is required and must be valid");
       }
-      if (!formData.qrScan || !validateQRCode(formData.qrScan)) {
-        validationErrors.push("Valid QR code scan is required");
+      if (!allQRCodesScanned()) {
+        validationErrors.push("All 4 corner QR codes must be scanned");
       }
       if (!photoData) {
         validationErrors.push("Selfie with GPS coordinates is required");
@@ -187,7 +211,10 @@ export default function SecureRounds() {
         location: location,
         guard_name: sanitizeInput(formData.guardName),
         employee_id: sanitizeInput(formData.employeeCode),
-        qr_code_data: sanitizeInput(formData.qrScan),
+        qr_code_corner_1: sanitizeInput(formData.qrCodeCorner1),
+        qr_code_corner_2: sanitizeInput(formData.qrCodeCorner2),
+        qr_code_corner_3: sanitizeInput(formData.qrCodeCorner3),
+        qr_code_corner_4: sanitizeInput(formData.qrCodeCorner4),
         gps_coordinates: photoData?.coordinates || null,
         timestamp: timestamp,
       };
@@ -201,7 +228,7 @@ export default function SecureRounds() {
 
       toast({
         title: "Checkpoint Logged Successfully",
-        description: "Your security round data has been validated and saved securely.",
+        description: "All 4 corner QR codes and security data have been validated and saved securely.",
       });
 
       // Reset form after successful submission
@@ -214,9 +241,13 @@ export default function SecureRounds() {
         timestamp: '',
         photo: null,
         gpsLocation: '',
-        qrScan: ''
+        qrCodeCorner1: '',
+        qrCodeCorner2: '',
+        qrCodeCorner3: '',
+        qrCodeCorner4: ''
       });
       setPhotoData(null);
+      setCurrentCorner(1);
     } catch (error: any) {
       // Generic error message to prevent information disclosure
       console.error('Submission error:', error);
@@ -227,6 +258,8 @@ export default function SecureRounds() {
       });
     }
   };
+
+  const { scannedCount } = getQRProgress();
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -391,31 +424,83 @@ export default function SecureRounds() {
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="qrScan" className="flex items-center gap-2">
-                      <QrCode className="h-4 w-4" />
-                      QR Code Scan
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="qrScan"
-                        name="qrScan"
-                        value={formData.qrScan}
-                        placeholder="Scanned QR code will appear here"
-                        onChange={handleChange}
-                        readOnly
-                        className="flex-1"
-                        required
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => setShowQRScanner(true)}
-                        variant="outline"
-                        size="default"
-                        className="px-3"
-                      >
-                        <Scan className="h-4 w-4" />
-                      </Button>
+                  {/* Four Corner QR Code Scanning */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <QrCode className="h-4 w-4" />
+                        Scan All 4 Corner QR Codes
+                      </Label>
+                      <Badge variant={allQRCodesScanned() ? "default" : "secondary"}>
+                        {scannedCount}/4 Complete
+                      </Badge>
+                    </div>
+                    
+                    {/* Corner Progress */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {[1, 2, 3, 4].map((corner) => {
+                        const cornerKey = `qrCodeCorner${corner}` as keyof typeof formData;
+                        const isScanned = !!formData[cornerKey];
+                        const isCurrent = currentCorner === corner;
+                        
+                        return (
+                          <div
+                            key={corner}
+                            className={`p-2 rounded-lg border flex items-center gap-2 text-sm ${
+                              isCurrent ? 'border-primary bg-primary/10' : 
+                              isScanned ? 'border-green-500 bg-green-50' : 'border-muted bg-muted/50'
+                            }`}
+                          >
+                            {isScanned ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className={isCurrent ? 'font-medium text-primary' : ''}>
+                              Corner {corner}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* QR Scanner Controls */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <Label htmlFor="cornerSelect" className="text-sm">Active Corner:</Label>
+                          <div className="flex gap-1 mt-1">
+                            {[1, 2, 3, 4].map((corner) => (
+                              <Button
+                                key={corner}
+                                type="button"
+                                size="sm"
+                                variant={currentCorner === corner ? "default" : "outline"}
+                                onClick={() => setCurrentCorner(corner as 1 | 2 | 3 | 4)}
+                                className="w-10 h-10"
+                              >
+                                {corner}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={() => setShowQRScanner(true)}
+                          variant="default"
+                          className="mt-6"
+                        >
+                          <Scan className="h-4 w-4 mr-2" />
+                          Scan Corner {currentCorner}
+                        </Button>
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        Currently scanning: Corner {currentCorner}
+                        {formData[`qrCodeCorner${currentCorner}` as keyof typeof formData] && 
+                          ' ✓ (Already scanned)'
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -426,10 +511,10 @@ export default function SecureRounds() {
                 type="submit" 
                 className="w-full h-12 text-lg font-semibold"
                 size="lg"
-                disabled={!photoData || !formData.qrScan}
+                disabled={!photoData || !allQRCodesScanned()}
               >
                 <Clock className="h-5 w-5 mr-2" />
-                Submit Checkpoint
+                Submit Checkpoint ({scannedCount}/4 QR + Photo)
               </Button>
             </form>
           </CardContent>
@@ -447,6 +532,9 @@ export default function SecureRounds() {
               </p>
               {photoData && (
                 <p className="text-success">✓ Live selfie captured with GPS coordinates</p>
+              )}
+              {allQRCodesScanned() && (
+                <p className="text-success">✓ All 4 corner QR codes scanned</p>
               )}
             </div>
           </CardContent>

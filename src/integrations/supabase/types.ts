@@ -50,6 +50,10 @@ export type Database = {
           id: string
           location: string
           photo_url: string | null
+          qr_code_corner_1: string | null
+          qr_code_corner_2: string | null
+          qr_code_corner_3: string | null
+          qr_code_corner_4: string | null
           qr_code_data: string | null
           timestamp: string
           user_id: string
@@ -62,6 +66,10 @@ export type Database = {
           id?: string
           location: string
           photo_url?: string | null
+          qr_code_corner_1?: string | null
+          qr_code_corner_2?: string | null
+          qr_code_corner_3?: string | null
+          qr_code_corner_4?: string | null
           qr_code_data?: string | null
           timestamp?: string
           user_id: string
@@ -74,8 +82,39 @@ export type Database = {
           id?: string
           location?: string
           photo_url?: string | null
+          qr_code_corner_1?: string | null
+          qr_code_corner_2?: string | null
+          qr_code_corner_3?: string | null
+          qr_code_corner_4?: string | null
           qr_code_data?: string | null
           timestamp?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          location_access: string[] | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_access?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_access?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -85,10 +124,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      user_role: "security_guard" | "manager" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -215,6 +257,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["security_guard", "manager", "admin"],
+    },
   },
 } as const

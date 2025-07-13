@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthForm from "./AuthForm";
 import SecureRounds from "./SecureRounds";
 import { Button } from "@/components/ui/button";
-import { LogOut, Database } from "lucide-react";
+import { LogOut, Database, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const AuthWrapper = () => {
@@ -58,6 +58,17 @@ const AuthWrapper = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/80 to-muted/30">
       <div className="absolute top-4 right-4 flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="flex items-center gap-2"
+        >
+          <Link to="/manager">
+            <Users className="h-4 w-4" />
+            Manager Dashboard
+          </Link>
+        </Button>
         <Button
           variant="outline"
           size="sm"
