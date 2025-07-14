@@ -158,18 +158,27 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-center">
-            <div className="p-3 bg-gradient-primary rounded-full shadow-button">
-              <Users className="h-8 w-8 text-white" />
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="absolute inset-0" style={{ background: 'var(--gradient-hero)' }}></div>
+      <div className="relative min-h-screen bg-background/80 backdrop-blur-sm p-4">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header */}
+          <div className="relative">
+            <div className="absolute inset-0 rounded-3xl" style={{ background: 'var(--gradient-glass)' }}></div>
+            <div className="relative p-6 rounded-3xl border border-border/50" style={{ boxShadow: 'var(--shadow-glow)' }}>
+              <div className="text-center space-y-3">
+                <div className="flex justify-center">
+                  <div className="p-4 rounded-full" style={{ background: 'var(--gradient-primary)' }}>
+                    <Users className="h-10 w-10 text-white" />
+                  </div>
+                </div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  🛡️ Security Command Center
+                </h1>
+                <p className="text-muted-foreground text-lg">Real-time monitoring of security operations</p>
+              </div>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">Manager Dashboard</h1>
-          <p className="text-muted-foreground">Security Rounds Monitoring & Analytics</p>
-        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -401,7 +410,8 @@ export default function ManagerDashboard() {
               )}
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );
