@@ -124,6 +124,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_security_rounds: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_role: {
         Args: { user_uuid: string }
         Returns: Database["public"]["Enums"]["user_role"]
@@ -131,6 +135,10 @@ export type Database = {
       is_admin: {
         Args: { user_uuid: string }
         Returns: boolean
+      }
+      schedule_cleanup_old_security_rounds: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {

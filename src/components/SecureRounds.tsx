@@ -158,8 +158,11 @@ export default function SecureRounds() {
     
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Auth check:', { user: user?.id, authError });
+      
       if (!user) {
+        console.error('No authenticated user found');
         toast({
           title: "Authentication Required",
           description: "Please log in to submit checkpoint data.",
@@ -220,12 +223,17 @@ export default function SecureRounds() {
       };
 
       // Insert data into Supabase
+      console.log('Submitting data:', submissionData);
       const { data, error } = await supabase
         .from('security_rounds')
         .insert([submissionData])
         .select();
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       toast({
         title: "Checkpoint Logged Successfully",

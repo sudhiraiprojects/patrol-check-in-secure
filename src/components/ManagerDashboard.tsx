@@ -41,6 +41,27 @@ export default function ManagerDashboard() {
 
   useEffect(() => {
     fetchSecurityRounds();
+    
+    // Set up real-time subscription for new submissions
+    const channel = supabase
+      .channel('security-rounds-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'security_rounds'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          fetchSecurityRounds(); // Refresh data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
