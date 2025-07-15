@@ -70,14 +70,38 @@ export default function ManagerDashboard() {
 
   const fetchSecurityRounds = async () => {
     try {
+      setLoading(true);
+      console.log('Fetching security rounds...');
+      
+      // Check authentication first
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Current user for dashboard:', user?.id, authError);
+      
+      if (!user) {
+        console.error('No authenticated user found for dashboard');
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to view the dashboard.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('security_rounds')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      
+      console.log('Security rounds query result:', { data, error, count: data?.length });
+      
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
       setRounds(data || []);
     } catch (error: any) {
+      console.error('Error fetching security rounds:', error);
       toast({
         title: 'Error Loading Data',
         description: 'Failed to load security rounds data.',
