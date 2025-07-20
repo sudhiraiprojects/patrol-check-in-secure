@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Camera, MapPin, QrCode, Clock, User, Scan, CheckCircle, Circle } from "lucide-react";
+import { Shield, Camera, MapPin, QrCode, Clock, User, Scan, CheckCircle, Circle, LogOut, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { QRScanner } from "./QRScanner";
 import { CameraCapture } from "./CameraCapture";
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 // Security validation functions
 const validateQRCode = (qrData: string): boolean => {
@@ -37,6 +39,8 @@ const validateFileSize = (file: File, maxSizeMB: number = 10): boolean => {
 
 export default function SecureRounds() {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [photoData, setPhotoData] = useState<{ file: File; coordinates: { lat: number; lng: number } | null } | null>(null);
@@ -55,6 +59,20 @@ export default function SecureRounds() {
     qrCodeCorner4: ''
   });
   const [currentCorner, setCurrentCorner] = useState<1 | 2 | 3 | 4>(1);
+
+  // Get current user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
@@ -271,8 +289,46 @@ export default function SecureRounds() {
   const { scannedCount } = getQRProgress();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/5 p-4">
-      <div className="max-w-xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/5">
+      {/* Navigation Header */}
+      <header className="p-4 border-b border-border/20 bg-background/80 backdrop-blur-sm">
+        <div className="max-w-xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ background: 'var(--gradient-primary)' }}>
+              <Shield className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-semibold text-foreground">Guard Portal</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {user?.email && (
+              <span className="text-xs text-muted-foreground hidden sm:block">
+                {user.email}
+              </span>
+            )}
+            <Button 
+              onClick={() => navigate('/manager')}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-xl mx-auto space-y-6 p-4">
         {/* Camera Capture Modal */}
         {showCamera && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

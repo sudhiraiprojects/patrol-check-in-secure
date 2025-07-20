@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { Shield, Users, QrCode, BarChart3, ArrowRight, LogIn } from 'lucide-react';
+import SecureRounds from '@/components/SecureRounds';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -43,6 +44,12 @@ const Index = () => {
     );
   }
 
+  // If user is authenticated, show the SecureRounds form
+  if (user) {
+    return <SecureRounds />;
+  }
+
+  // If not authenticated, show the landing page
   return (
     <div className="min-h-screen relative overflow-hidden">
       <div className="absolute inset-0" style={{ background: 'var(--gradient-hero)' }}></div>
@@ -60,28 +67,14 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-4">
-              {user ? (
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {user.email}
-                  </span>
-                  <Button 
-                    onClick={() => navigate('/manager')}
-                    style={{ background: 'var(--gradient-primary)' }}
-                  >
-                    Dashboard
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  onClick={() => navigate('/auth')}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Button>
-              )}
+              <Button 
+                onClick={() => navigate('/auth')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Sign In
+              </Button>
             </div>
           </div>
         </header>
@@ -101,19 +94,17 @@ const Index = () => {
                     Advanced security checkpoint tracking with QR code scanning, GPS verification, and real-time monitoring capabilities.
                   </p>
                   
-                  {!user && (
-                    <div className="mt-8">
-                      <Button 
-                        size="lg"
-                        onClick={() => navigate('/auth')}
-                        className="text-lg px-8 py-6"
-                        style={{ background: 'var(--gradient-primary)' }}
-                      >
-                        Get Started
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-8">
+                    <Button 
+                      size="lg"
+                      onClick={() => navigate('/auth')}
+                      className="text-lg px-8 py-6"
+                      style={{ background: 'var(--gradient-primary)' }}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -168,35 +159,6 @@ const Index = () => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Quick Actions */}
-            {user && (
-              <div className="text-center">
-                <Card className="inline-block border border-border/50" style={{ boxShadow: 'var(--shadow-glow)' }}>
-                  <CardHeader>
-                    <CardTitle>Quick Access</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex gap-4">
-                    <Button 
-                      onClick={() => navigate('/manager')}
-                      className="flex items-center gap-2"
-                      style={{ background: 'var(--gradient-primary)' }}
-                    >
-                      <BarChart3 className="h-4 w-4" />
-                      Manager Dashboard
-                    </Button>
-                    <Button 
-                      onClick={() => navigate('/data')}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" />
-                      Data Management
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         </main>
       </div>
