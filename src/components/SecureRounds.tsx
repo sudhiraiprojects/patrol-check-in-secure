@@ -204,9 +204,9 @@ export default function SecureRounds() {
       if (!validateTextInput(formData.guardName, 100)) {
         validationErrors.push("Guard name is required and must be valid");
       }
-      if (!validateTextInput(formData.employeeCode, 50)) {
-        validationErrors.push("Employee code is required and must be valid");
-      }
+       if (!validateTextInput(formData.employeeCode, 50)) {
+         validationErrors.push("Guard code is required and must be valid");
+       }
       if (!allQRCodesScanned()) {
         validationErrors.push("All 4 corner QR codes must be scanned");
       }
@@ -452,17 +452,17 @@ export default function SecureRounds() {
                     />
                   </div>
                   
-                  <div>
-                    <Label htmlFor="employeeCode">Employee Code</Label>
-                    <Input
-                      id="employeeCode"
-                      name="employeeCode"
-                      value={formData.employeeCode}
-                      placeholder="Enter employee code"
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
+                   <div>
+                     <Label htmlFor="employeeCode">Guard Code</Label>
+                     <Input
+                       id="employeeCode"
+                       name="employeeCode"
+                       value={formData.employeeCode}
+                       placeholder="Enter guard code"
+                       onChange={handleChange}
+                       required
+                     />
+                   </div>
                 </div>
               </div>
 

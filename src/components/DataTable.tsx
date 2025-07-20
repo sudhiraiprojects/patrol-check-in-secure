@@ -109,12 +109,12 @@ const DataTable = () => {
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by guard, employee ID, or location..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+               <Input
+                 placeholder="Search by guard, guard code, or location..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-10"
+               />
             </div>
           </div>
           
@@ -215,12 +215,12 @@ const DataTable = () => {
                 >
                   Guard {sortBy === "guard_name" && (sortOrder === "asc" ? "↑" : "↓")}
                 </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort("employee_id")}
-                >
-                  Employee ID {sortBy === "employee_id" && (sortOrder === "asc" ? "↑" : "↓")}
-                </TableHead>
+                 <TableHead 
+                   className="cursor-pointer hover:bg-muted/50"
+                   onClick={() => handleSort("employee_id")}
+                 >
+                   Guard Code {sortBy === "employee_id" && (sortOrder === "asc" ? "↑" : "↓")}
+                 </TableHead>
                 <TableHead 
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("location")}
@@ -267,13 +267,18 @@ const DataTable = () => {
                     <TableCell className="font-mono text-xs">
                       {formatGPS(round.gps_coordinates)}
                     </TableCell>
-                    <TableCell>
-                      {round.photo_url ? (
-                        <Badge variant="secondary">Available</Badge>
-                      ) : (
-                        <Badge variant="outline">None</Badge>
-                      )}
-                    </TableCell>
+                     <TableCell>
+                       {round.photo_url ? (
+                         <img 
+                           src={round.photo_url} 
+                           alt="Security selfie" 
+                           className="w-12 h-12 object-cover rounded-lg cursor-pointer hover:scale-110 transition-transform"
+                           onClick={() => window.open(round.photo_url, '_blank')}
+                         />
+                       ) : (
+                         <Badge variant="outline">No Photo</Badge>
+                       )}
+                     </TableCell>
                   </TableRow>
                 ))
               )}
