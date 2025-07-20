@@ -258,7 +258,12 @@ export default function SecureRounds() {
 
       // Validate GPS coordinates if provided
       if (photoData?.coordinates) {
-        const gpsValidation = SecurityValidator.validateGPSCoordinates(photoData.coordinates);
+        // Convert lat/lng to latitude/longitude for validation
+        const coordinates = {
+          latitude: photoData.coordinates.lat,
+          longitude: photoData.coordinates.lng
+        };
+        const gpsValidation = SecurityValidator.validateGPSCoordinates(coordinates);
         if (!gpsValidation.isValid) {
           validationErrors.push(`GPS: ${gpsValidation.error}`);
         }
