@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      role_audit_log: {
+        Row: {
+          action: string
+          id: string
+          new_role: Database["public"]["Enums"]["user_role"]
+          old_role: Database["public"]["Enums"]["user_role"] | null
+          performed_by: string
+          target_user: string
+          timestamp: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          new_role: Database["public"]["Enums"]["user_role"]
+          old_role?: Database["public"]["Enums"]["user_role"] | null
+          performed_by: string
+          target_user: string
+          timestamp?: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          new_role?: Database["public"]["Enums"]["user_role"]
+          old_role?: Database["public"]["Enums"]["user_role"] | null
+          performed_by?: string
+          target_user?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
       security_rounds: {
         Row: {
           created_at: string
@@ -124,6 +154,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_change_user_role: {
+        Args: {
+          target_user_id: string
+          new_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
       cleanup_old_security_rounds: {
         Args: Record<PropertyKey, never>
         Returns: undefined

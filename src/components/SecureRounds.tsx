@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { QRScanner } from "./QRScanner";
 import { CameraCapture } from "./CameraCapture";
 import { User as SupabaseUser } from '@supabase/supabase-js';
+import { SecurityValidator, formSubmissionLimiter, qrScanLimiter } from "@/lib/security";
 
 // Security validation functions
 const validateQRCode = (qrData: string): boolean => {
@@ -87,22 +88,32 @@ export default function SecureRounds() {
   };
 
   const handleQRScan = (result: string) => {
-    // Validate QR code before accepting
-    if (!validateQRCode(result)) {
+    // Enhanced security: Rate limiting for QR scans
+    if (!qrScanLimiter.isAllowed(user?.id || 'anonymous')) {
       toast({
-        title: "Invalid QR Code",
-        description: "The scanned QR code contains invalid or potentially harmful content.",
+        title: "Rate Limit Exceeded",
+        description: "Too many QR scan attempts. Please wait before trying again.",
         variant: "destructive",
       });
       return;
     }
 
-    const sanitizedResult = sanitizeInput(result);
+    // Enhanced QR validation using security utility
+    const qrValidation = SecurityValidator.validateQRData(result);
+    if (!qrValidation.isValid) {
+      toast({
+        title: "Invalid QR Code",
+        description: qrValidation.error || "The scanned QR code contains invalid content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const cornerKey = `qrCodeCorner${currentCorner}` as keyof typeof formData;
     
     setFormData((prev) => ({
       ...prev,
-      [cornerKey]: sanitizedResult
+      [cornerKey]: qrValidation.sanitized
     }));
     
     setShowQRScanner(false);
@@ -189,27 +200,70 @@ export default function SecureRounds() {
         return;
       }
 
-      // Comprehensive form validation
+      // Enhanced security: Rate limiting for form submissions
+      if (!formSubmissionLimiter.isAllowed(user.id)) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "Too many submission attempts. Please wait before trying again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Enhanced validation using security utility
       const validationErrors: string[] = [];
       
-      if (!validateTextInput(formData.state, 50)) {
-        validationErrors.push("State is required and must be valid");
+      // Validate state
+      const stateValidation = SecurityValidator.validateAndSanitizeInput(formData.state, 50, 2);
+      if (!stateValidation.isValid) {
+        validationErrors.push(`State: ${stateValidation.error}`);
       }
-      if (!validateTextInput(formData.siteCode, 20)) {
-        validationErrors.push("Site code is required and must be valid");
+
+      // Validate site code
+      const siteCodeValidation = SecurityValidator.validateAndSanitizeInput(formData.siteCode, 20, 2);
+      if (!siteCodeValidation.isValid) {
+        validationErrors.push(`Site code: ${siteCodeValidation.error}`);
       }
-      if (!validateTextInput(formData.siteName, 100)) {
-        validationErrors.push("Site name is required and must be valid");
+
+      // Validate site name
+      const siteNameValidation = SecurityValidator.validateAndSanitizeInput(formData.siteName, 100, 2);
+      if (!siteNameValidation.isValid) {
+        validationErrors.push(`Site name: ${siteNameValidation.error}`);
       }
-      if (!validateTextInput(formData.guardName, 100)) {
-        validationErrors.push("Guard name is required and must be valid");
+
+      // Validate guard name
+      const guardNameValidation = SecurityValidator.validateGuardName(formData.guardName);
+      if (!guardNameValidation.isValid) {
+        validationErrors.push(`Guard name: ${guardNameValidation.error}`);
       }
-       if (!validateTextInput(formData.employeeCode, 50)) {
-         validationErrors.push("Guard code is required and must be valid");
-       }
-      if (!allQRCodesScanned()) {
-        validationErrors.push("All 4 corner QR codes must be scanned");
+
+      // Validate guard code
+      const guardCodeValidation = SecurityValidator.validateGuardCode(formData.employeeCode);
+      if (!guardCodeValidation.isValid) {
+        validationErrors.push(`Guard code: ${guardCodeValidation.error}`);
       }
+
+      // Validate QR codes
+      const qrCodes = [formData.qrCodeCorner1, formData.qrCodeCorner2, formData.qrCodeCorner3, formData.qrCodeCorner4];
+      qrCodes.forEach((qrCode, index) => {
+        if (!qrCode) {
+          validationErrors.push(`QR code for corner ${index + 1} is missing`);
+        } else {
+          const qrValidation = SecurityValidator.validateQRData(qrCode);
+          if (!qrValidation.isValid) {
+            validationErrors.push(`QR code corner ${index + 1}: ${qrValidation.error}`);
+          }
+        }
+      });
+
+      // Validate GPS coordinates if provided
+      if (photoData?.coordinates) {
+        const gpsValidation = SecurityValidator.validateGPSCoordinates(photoData.coordinates);
+        if (!gpsValidation.isValid) {
+          validationErrors.push(`GPS: ${gpsValidation.error}`);
+        }
+      }
+
       if (!photoData) {
         validationErrors.push("Selfie with GPS coordinates is required");
       }
@@ -224,18 +278,18 @@ export default function SecureRounds() {
       }
 
       const timestamp = new Date().toISOString();
-      const location = `${sanitizeInput(formData.state)} - ${sanitizeInput(formData.siteName)}`;
+      const location = `${stateValidation.sanitized} - ${siteNameValidation.sanitized}`;
       
       // Create sanitized data object to submit to Supabase
       const submissionData = {
         user_id: user.id,
         location: location,
-        guard_name: sanitizeInput(formData.guardName),
-        employee_id: sanitizeInput(formData.employeeCode),
-        qr_code_corner_1: sanitizeInput(formData.qrCodeCorner1),
-        qr_code_corner_2: sanitizeInput(formData.qrCodeCorner2),
-        qr_code_corner_3: sanitizeInput(formData.qrCodeCorner3),
-        qr_code_corner_4: sanitizeInput(formData.qrCodeCorner4),
+        guard_name: guardNameValidation.sanitized,
+        employee_id: guardCodeValidation.sanitized,
+        qr_code_corner_1: SecurityValidator.validateQRData(formData.qrCodeCorner1).sanitized,
+        qr_code_corner_2: SecurityValidator.validateQRData(formData.qrCodeCorner2).sanitized,
+        qr_code_corner_3: SecurityValidator.validateQRData(formData.qrCodeCorner3).sanitized,
+        qr_code_corner_4: SecurityValidator.validateQRData(formData.qrCodeCorner4).sanitized,
         gps_coordinates: photoData?.coordinates || null,
         timestamp: timestamp,
       };
