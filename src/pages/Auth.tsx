@@ -8,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { Eye, EyeOff, Shield, Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Mail, RefreshCw } from 'lucide-react';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const { toast } = useToast();
@@ -28,6 +30,8 @@ export default function Auth() {
     password: '',
     confirmPassword: ''
   });
+
+  const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
     // Set up auth state listener
@@ -161,6 +165,38 @@ export default function Auth() {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Reset Email Sent',
+        description: 'Please check your email for password reset instructions.',
+      });
+
+      setShowResetForm(false);
+      setResetEmail('');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast({
+        title: 'Reset Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <div className="absolute inset-0" style={{ background: 'var(--gradient-hero)' }}></div>
@@ -198,57 +234,118 @@ export default function Auth() {
 
                 {/* Login Tab */}
                 <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={loginForm.email}
-                          onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                          className="pl-10"
-                          required
-                        />
+                  {!showResetForm ? (
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="login-email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="login-email"
+                            type="email"
+                            placeholder="Enter your email"
+                            value={loginForm.email}
+                            onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                            className="pl-10"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="login-password"
-                          type={showPassword ? 'text' : 'password'}
-                          placeholder="Enter your password"
-                          value={loginForm.password}
-                          onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                          className="pl-10 pr-10"
-                          required
-                        />
+                      <div className="space-y-2">
+                        <Label htmlFor="login-password">Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="login-password"
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Enter your password"
+                            value={loginForm.password}
+                            onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                            className="pl-10 pr-10"
+                            required
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full" 
+                        disabled={loading}
+                        style={{ background: 'var(--gradient-primary)' }}
+                      >
+                        {loading ? 'Signing In...' : 'Sign In'}
+                      </Button>
+
+                      <div className="text-center">
                         <Button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1"
-                          onClick={() => setShowPassword(!showPassword)}
+                          variant="link"
+                          className="text-sm text-muted-foreground hover:text-primary"
+                          onClick={() => setShowResetForm(true)}
                         >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          Forgot your password?
                         </Button>
                       </div>
-                    </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-center mb-4">
+                        <h3 className="text-lg font-semibold">Reset Password</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Enter your email to receive password reset instructions
+                        </p>
+                      </div>
+                      
+                      <form onSubmit={handlePasswordReset} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reset-email">Email</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="reset-email"
+                              type="email"
+                              placeholder="Enter your email"
+                              value={resetEmail}
+                              onChange={(e) => setResetEmail(e.target.value)}
+                              className="pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={loading}
-                      style={{ background: 'var(--gradient-primary)' }}
-                    >
-                      {loading ? 'Signing In...' : 'Sign In'}
-                    </Button>
-                  </form>
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          disabled={resetLoading}
+                          style={{ background: 'var(--gradient-primary)' }}
+                        >
+                          <RefreshCw className={`mr-2 h-4 w-4 ${resetLoading ? 'animate-spin' : ''}`} />
+                          {resetLoading ? 'Sending Reset Email...' : 'Send Reset Email'}
+                        </Button>
+
+                        <div className="text-center">
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="text-sm text-muted-foreground hover:text-primary"
+                            onClick={() => setShowResetForm(false)}
+                          >
+                            Back to Sign In
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
                 </TabsContent>
 
                 {/* Signup Tab */}
