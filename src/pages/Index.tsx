@@ -94,16 +94,24 @@ const Index = () => {
                     Advanced security checkpoint tracking with QR code scanning, GPS verification, and real-time monitoring capabilities.
                   </p>
                   
-                  <div className="mt-8">
-                    <Button 
-                      size="lg"
-                      onClick={() => navigate('/auth')}
-                      className="text-lg px-8 py-6"
-                      style={{ background: 'var(--gradient-primary)' }}
-                    >
-                      Get Started
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
+                  <div className="mt-8 space-y-4">
+                    <div className="px-6 py-4 bg-primary/10 border-2 border-primary/20 rounded-lg inline-block">
+                      <p className="text-lg font-semibold text-primary">
+                        📝 <span className="underline decoration-primary decoration-2">Sign up here to start</span> scanning QR codes and begin your security patrol rounds!
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Button 
+                        size="lg"
+                        onClick={() => navigate('/auth')}
+                        className="text-lg px-8 py-6"
+                        style={{ background: 'var(--gradient-primary)' }}
+                      >
+                        Get Started
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
