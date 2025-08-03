@@ -285,6 +285,38 @@ export default function SecureRounds() {
       const timestamp = new Date().toISOString();
       const location = `${stateValidation.sanitized} - ${siteNameValidation.sanitized}`;
       
+      // Upload photo to storage first
+      let photoUrl = null;
+      if (photoData?.file) {
+        const fileName = `${user.id}/${timestamp}_${Math.random().toString(36).substring(7)}.jpg`;
+        console.log('Uploading photo:', fileName);
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('security-photos')
+          .upload(fileName, photoData.file, {
+            contentType: 'image/jpeg',
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Photo upload error:', uploadError);
+          toast({
+            title: "Photo Upload Failed",
+            description: "Failed to upload photo. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Get the public URL for the uploaded photo
+        const { data: urlData } = supabase.storage
+          .from('security-photos')
+          .getPublicUrl(fileName);
+        
+        photoUrl = urlData.publicUrl;
+        console.log('Photo uploaded successfully:', photoUrl);
+      }
+
       // Create sanitized data object to submit to Supabase
       const submissionData = {
         user_id: user.id,
@@ -296,6 +328,7 @@ export default function SecureRounds() {
         qr_code_corner_3: SecurityValidator.validateQRData(formData.qrCodeCorner3).sanitized,
         qr_code_corner_4: SecurityValidator.validateQRData(formData.qrCodeCorner4).sanitized,
         gps_coordinates: photoData?.coordinates || null,
+        photo_url: photoUrl,
         timestamp: timestamp,
       };
 
