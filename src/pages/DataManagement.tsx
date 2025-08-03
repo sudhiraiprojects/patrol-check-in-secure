@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Database, BarChart3, FileDown, Calendar } from "lucide-react";
+import { LogOut, Database, BarChart3, FileDown, Calendar, Shield } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import DataTable from "@/components/DataTable";
 import Analytics from "@/components/Analytics";
 import ExportData from "@/components/ExportData";
 import Reports from "@/components/Reports";
+import AdminManagement from "@/components/AdminManagement";
 
 const DataManagement = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -153,7 +154,7 @@ const DataManagement = () => {
 
         {/* Main Content */}
         <Tabs defaultValue="table" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="table" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
               Data Table
@@ -170,6 +171,12 @@ const DataManagement = () => {
               <Calendar className="h-4 w-4" />
               Reports
             </TabsTrigger>
+            {userRole === 'admin' && (
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Admin
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="table" className="mt-6">
@@ -187,6 +194,12 @@ const DataManagement = () => {
           <TabsContent value="reports" className="mt-6">
             <Reports />
           </TabsContent>
+
+          {userRole === 'admin' && (
+            <TabsContent value="admin" className="mt-6">
+              <AdminManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
