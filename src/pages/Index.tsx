@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
-import { Shield, Users, QrCode, BarChart3, ArrowRight, LogIn } from 'lucide-react';
+import { Shield, Users, QrCode, BarChart3, ArrowRight, LogIn, Database } from 'lucide-react';
 import SecureRounds from '@/components/SecureRounds';
 
 const Index = () => {
@@ -68,12 +68,20 @@ const Index = () => {
             
             <div className="flex items-center gap-4">
               <Button 
+                onClick={() => navigate('/data')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Database className="h-4 w-4" />
+                Admin Login
+              </Button>
+              <Button 
                 onClick={() => navigate('/auth')}
                 variant="outline"
                 className="flex items-center gap-2"
               >
                 <LogIn className="h-4 w-4" />
-                Sign In
+                Guard Login
               </Button>
             </div>
           </div>

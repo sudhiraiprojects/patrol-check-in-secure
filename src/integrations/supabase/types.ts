@@ -173,6 +173,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      is_manager_or_admin: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
       schedule_cleanup_old_security_rounds: {
         Args: Record<PropertyKey, never>
         Returns: undefined

@@ -13,6 +13,8 @@ import Reports from "@/components/Reports";
 const DataManagement = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -20,16 +22,54 @@ const DataManagement = () => {
       (event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Check user role when auth state changes
+        if (session?.user) {
+          checkUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+          setRoleLoading(false);
+        }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      if (session?.user) {
+        checkUserRole(session.user.id);
+      } else {
+        setUserRole(null);
+        setRoleLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const checkUserRole = async (userId: string) => {
+    setRoleLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole(null);
+      } else {
+        setUserRole(data?.role || null);
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+      setUserRole(null);
+    } finally {
+      setRoleLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -42,7 +82,7 @@ const DataManagement = () => {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -55,10 +95,33 @@ const DataManagement = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/80 to-muted/30">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-foreground">Admin Access Required</h1>
+          <p className="text-muted-foreground">Please sign in with admin credentials to access data management.</p>
+          <Button onClick={() => window.location.href = '/auth'}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has manager or admin role
+  if (userRole !== 'manager' && userRole !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/80 to-muted/30">
+        <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
-          <p className="text-muted-foreground">Please sign in to access data management.</p>
+          <p className="text-muted-foreground">
+            You need manager or admin privileges to access this area.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Current role: {userRole || 'No role assigned'}
+          </p>
+          <Button onClick={handleSignOut} variant="outline">
+            Sign Out
+          </Button>
         </div>
       </div>
     );
